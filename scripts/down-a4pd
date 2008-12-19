@@ -1,0 +1,9 @@
+#!/bin/bash
+VMXFILE=ALT4PD.vmx
+VMXPATH="/var/lib/vmware/Virtual Machines/ALT4PD"
+
+if ! vmrun list|grep "${VMXFILE}" > /dev/null ; then
+	echo "${VMXFILE} aready down!"
+	exit 1
+fi
+vmrun stop "${VMXPATH}/${VMXFILE}"

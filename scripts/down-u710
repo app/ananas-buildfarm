@@ -1,0 +1,9 @@
+#!/bin/bash
+VMXFILE=Ubuntu7.10.vmx
+VMXPATH="/var/lib/vmware/Virtual Machines/Ubuntu7.10"
+
+if ! vmrun list|grep "${VMXFILE}" > /dev/null ; then
+	echo "${VMXFILE} aready down!"
+	exit 1
+fi
+vmrun stop "${VMXPATH}/${VMXFILE}"

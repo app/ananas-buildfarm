@@ -1,0 +1,6 @@
+FARMROOT=/home/app/buildfarm
+
+BINPATH=$FARMROOT/scripts
+
+export FARMROOT
+export PATH=$BINPATH:$PATH

@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# This script should be run for Ubuntu 7.10 with following requirements
+# 1. user "builder" should exists with sudo nopasswd rights
+# 2. ssh access of user "builder" to Ubuntu 7.10 with no password should work
+# 3. DVD disk of Ubuntu 7.10 should be mounted to /media/cdrom0 of Ubunti host
+
+. ${FARMROOT}/slaves.conf
+CMD="ssh -i${FARMROOT}/builder_id_rsa -l builder ${U710_IP}"
+SCP="scp -i${FARMROOT}/builder_id_rsa"
+BUILDERHOME=/home/builder
+
+# Копируем файлы исходников и вспомогательные пакеты, отсутствующие в репозитарии.
+$CMD "mkdir -p ~/pbuilder/result"
+$SCP ${FARMROOT}/packages/qsa-x11-free_1.1.4-1_i386.deb builder@${U710_IP}:pbuilder/result
+#$CMD "sudo dpkg -i qsa-x11-free_1.1.4-1_i386.deb"
+$SCP ${FARMROOT}/sources/ananas-0.9.5.tar.gz builder@${U710_IP}:
+$CMD "tar zxf ananas-0.9.5.tar.gz"
+$SCP ${FARMROOT}/ananasproject-gpg.key builder@${U710_IP}:
+$CMD "gpg --import ananasproject-gpg.key"
+
+# Устанавливаем необходимые пакеты
+#$CMD "sudo apt-get -y install libqt3-mt"
+#$CMD "sudo apt-get -y install libqt3-mt-dev"
+#$CMD "sudo apt-get -y install g++"
+#$CMD "sudo apt-get -y install qt3-apps-dev"
+#$CMD "sudo apt-get -y install libmysqlclient15-dev"
+$CMD "sudo apt-get -y install build-essential"
+$CMD "sudo apt-get -y install devscripts"
+$CMD "sudo apt-get -y install debhelper"
+$CMD "sudo apt-get -y install dh-make"
+$CMD "sudo apt-get -y install fakeroot"
+$CMD "sudo apt-get -y install lintian"
+$CMD "sudo apt-get -y install linda"
+$CMD "sudo apt-get -y install pbuilder"
+$CMD "sudo apt-get -y install apache2" # нужен для организации доступа к локальному репозитарию из chrooted environment
+
+# Настраиваем среду сборки
+$CMD "cd pbuilder/result; dpkg-scanpackages . /dev/null |gzip -9 > Packages.gz"
+$CMD "mkdir -p ~/bin"
+$CMD "cp /usr/share/doc/pbuilder/examples/pbuilder-distribution.sh ~/bin/pbuilder-gutsy"
+$CMD "cp /etc/pbuilderrc ~/.pbuilderrc"
+$CMD 'sed -i s/BUILDPLACE=.*/"BUILDPLACE=$(echo $BUILDERHOME|sed s/"\/"/"\\\\\/"/g)\/pbuilder\/build\/"/ ~/.pbuilderrc'
+$CMD 'sed -i s/BUILDRESULT=.*/"BUILDRESULT=$(echo $BUILDERHOME|sed s/"\/"/"\\\\\/"/g)\/pbuilder\/result\/"/ ~/.pbuilderrc'
+$CMD 'sed -i s/MIRRORSITE=.*/"MIRRORSITE=http:\/\/localhost\/cdrom0"\/ ~/.pbuilderrc'
+$CMD 'sed -i s/.*OTHERMIRROR=.*/"OTHERMIRROR=\"deb http:\/\/localhost\/result .\/\""/ ~/.pbuilderrc'
+$CMD "sudo ln -s /media/cdrom0 /var/www/"
+$CMD "sudo ln -s $BUILDERHOME/pbuilder/result /var/www/"
+$CMD "bin/pbuilder-gutsy create"
+
+#$CMD "mkdir buildfarm.tmp"
+#$CMD "apt-get install libgcc++"
